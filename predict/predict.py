@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Test modelu YOLO na pojedynczym zdjęciu."""
+"""Test modelu YOLO - predykcja wszystkich plików z folderu."""
 
 from ultralytics import YOLO
 import cv2
 import sys
 import os
+from pathlib import Path
 
 def predict_image(model_path, image_path, output_path='result.jpg', conf_threshold=0.25):
     """Wykryj obiekty na pojedynczym zdjęciu."""
@@ -77,40 +78,64 @@ def predict_image(model_path, image_path, output_path='result.jpg', conf_thresho
     
     # Zapisz wynik
     cv2.imwrite(output_path, img)
-    print(f"\n✓ Wynik zapisany: {output_path}")
-    
-    # Wyświetl obraz - przeskaluj jeśli za duży
-    h, w = img.shape[:2]
-    max_dim = 1200
-    if h > max_dim or w > max_dim:
-        scale = max_dim / max(h, w)
-        new_w, new_h = int(w * scale), int(h * scale)
-        display_img = cv2.resize(img, (new_w, new_h))
-    else:
-        display_img = img
-    
-    cv2.imshow('Detekcja - naciśnij dowolny klawisz aby zamknąć', display_img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    
+    print(f"✓ Wynik zapisany: {output_path}")
     print("=" * 60)
+    
+    return len(boxes)
 
 
 def main():
+    # Konfiguracja
+    script_dir = Path(__file__).parent
+    input_dir = script_dir / 'data'
+    output_dir = script_dir / 'output'
+    model_path = script_dir.parent / 'model' / 'weights' / 'best.pt'
     
-    image_path = sys.argv[1]
-    conf = float(sys.argv[2]) if len(sys.argv) > 2 else 0.1
-    #image_path = "dataset/yolo_dataset/images/val/48001F003202511190110 czarno_aug1.bmp"
-    #conf = 0.5
+    # Próg pewności (można zmienić)
+    conf = 0.4
     
-    # Domyślna ścieżka do modelu
-    model_path = 'runs/detect/train8/weights/best.pt'
+    # Utwórz katalog wyjściowy
+    output_dir.mkdir(exist_ok=True)
     
-    # Nazwa pliku wyjściowego
-    basename = os.path.splitext(os.path.basename(image_path))[0]
-    output_path = f"result_{basename}.jpg"
+    # Znajdź wszystkie obrazy w katalogu data
+    image_extensions = ['*.bmp', '*.jpg', '*.jpeg', '*.png']
+    image_files = []
+    for ext in image_extensions:
+        image_files.extend(input_dir.glob(ext))
     
-    predict_image(model_path, image_path, output_path, conf)
+    if not image_files:
+        print(f"Brak obrazów w katalogu {input_dir}")
+        return
+    
+    print("=" * 60)
+    print(f"Znaleziono {len(image_files)} obrazów do przetworzenia")
+    print(f"Model: {model_path}")
+    print(f"Próg pewności: {conf}")
+    print("=" * 60)
+    
+    # Przetwórz wszystkie obrazy
+    total_detections = 0
+    processed = 0
+    
+    for i, image_path in enumerate(sorted(image_files), 1):
+        print(f"\n[{i}/{len(image_files)}] Przetwarzanie: {image_path.name}")
+        
+        basename = image_path.stem
+        output_path = output_dir / f"{basename}_result.jpg"
+        
+        try:
+            detections = predict_image(str(model_path), str(image_path), str(output_path), conf)
+            total_detections += detections
+            processed += 1
+        except Exception as e:
+            print(f"Błąd podczas przetwarzania {image_path.name}: {e}")
+    
+    print("\n" + "=" * 60)
+    print(f"PODSUMOWANIE:")
+    print(f"  Przetworzonych obrazów: {processed}/{len(image_files)}")
+    print(f"  Łączna liczba detekcji: {total_detections}")
+    print(f"  Wyniki zapisane w: {output_dir}")
+    print("=" * 60)
 
 
 if __name__ == '__main__':
