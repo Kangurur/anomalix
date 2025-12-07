@@ -2,6 +2,7 @@
 
 System wykrywania zagrożeń w skanach bagażu/pojazdów. Dwa podejścia: **YOLO** (konkretne obiekty) i **Autoencoder** (ogólne anomalie).
 Przed przejrzeniem kodu zachęcamy do zobaczenia prezentacji, która wprowadzi temat.
+Pełen przegląd modeli znajduje się w plikach yolo.ipynb oraz conv_autoencoder.ipynb.
 
 ## 🚀 Szybki start
 
