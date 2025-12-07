@@ -6,6 +6,11 @@ import cv2
 import sys
 import os
 from pathlib import Path
+import numpy as np
+
+# Import funkcji przycinania z cut.py
+from cut import crop_white_background
+
 
 def predict_image(model_path, image_path, output_path='result.jpg', conf_threshold=0.25):
     """Wykryj obiekty na pojedynczym zdjęciu."""
@@ -27,20 +32,29 @@ def predict_image(model_path, image_path, output_path='result.jpg', conf_thresho
     
     model = YOLO(model_path)
     
+    # Wczytaj obraz
+    img_original = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    if img_original is None:
+        print(f"Błąd: Nie można wczytać obrazu {image_path}")
+        return 0
+    
+    # Przytnij białe tło
+    img_cropped = crop_white_background(img_original)
+    
+    # Konwertuj z powrotem na BGR dla YOLO i rysowania
+    if len(img_cropped.shape) == 2:
+        img = cv2.cvtColor(img_cropped, cv2.COLOR_GRAY2BGR)
+    else:
+        img = img_cropped
+    
     # Detekcja
+    # Detekcja na przyciętym obrazie
     results = model.predict(
-        source=image_path,
+        source=img,
         conf=conf_threshold,
         save=False,
         verbose=False
     )
-    
-    # Wczytaj obraz
-    img = cv2.imread(image_path)
-    
-    # Konwertuj grayscale na BGR jeśli potrzeba
-    if len(img.shape) == 2:
-        img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     
     result = results[0]
     boxes = result.boxes
