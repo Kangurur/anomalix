@@ -1,0 +1,104 @@
+================================================================================
+                    ANOMALIX - SYSTEM DETEKCJI ZAGROŻEŃ
+              Analiza obrazów rentgenowskich bagażu i pojazdów
+================================================================================
+
+AUTORZY: C(offe)++
+
+================================================================================
+1. CEL PROJEKTU
+================================================================================
+
+Anomalix to system analizy obrazów RTG wykorzystujący sztuczną inteligencję
+do wykrywania potencjalnie niebezpiecznych obiektów oraz nietypowych struktur
+w skanach bagażu i pojazdów.
+
+Projekt łączy DWA PODEJŚCIA:
+  • YOLO (YOLOv8n) - Supervised Learning - detekcja konkretnych obiektów
+  • Convolutional Autoencoder - Unsupervised Learning - wykrywanie anomalii
+
+
+================================================================================
+2. METODY
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ YOLO - DETEKCJA OBIEKTÓW (Supervised)                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Model: YOLOv8 nano (szybka, wydajna wersja)
+Zadanie: Rozpoznawanie 6 klas niebezpiecznych obiektów
+
+Wykrywane klasy:
+  0. Butelki/Siekiery
+  1. Pudełka
+  2. Skrzynie
+  3. Granaty
+  4. Nożyce/Szczypce
+  5. Łomy
+
+dodawanie większej liczby klas jest proste i niekosztowne
+
+Wynik: Bounding boxy z nazwami klas i poziomem pewności
+Dokładność: Wysoka dla znanych klas
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ AUTOENCODER - WYKRYWANIE ANOMALII (Unsupervised)                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Model: Convolutional Autoencoder (symetryczny Encoder-Decoder)
+Zadanie: Wykrywanie wszystkiego, co odbiega od normy
+
+Koncepcja:
+  • Model uczy się TYLKO na czystych obrazach (bez anomalii)
+  • Zapamiętuje jak wygląda "normalność"
+  • Gdy zobaczy anomalię - nie potrafi jej zrekonstruować
+  • Wysoki błąd rekonstrukcji = anomalia
+
+Architektura:
+  Encoder: 1 → 16 → 32 → 64 → 128 → 256 kanałów
+  Bottleneck: 16x16x256
+  Decoder: 256 → 128 → 64 → 32 → 16 → 1 kanał
+
+Wynik: Mapa cieplna pokazująca nietypowe obszary
+Elastyczność: Wykrywa nieznane wcześniej anomalie
+
+
+================================================================================
+3. TECHNOLOGIE I NARZĘDZIA
+================================================================================
+
+Języki i frameworki:
+  • Python 3.8+
+  • PyTorch (deep learning)
+  • Ultralytics YOLO (detection)
+  • OpenCV (przetwarzanie obrazów)
+  • NumPy, Matplotlib, Pillow
+
+Narzędzia labelowania:
+  • LabelMe (ręczne oznaczanie obiektów)
+
+Środowisko:
+  • Jupyter Notebook (eksperymentowanie)
+  • GPU (opcjonalnie, przyspiesza trening)
+
+
+================================================================================
+4. PODSUMOWANIE
+================================================================================
+
+Projekt Anomalix demonstruje skuteczne połączenie dwóch różnych podejść
+do analizy obrazów:
+
+  ✓ YOLO - precyzyjne, szybkie, ale wymaga labelowania
+  ✓ Autoencoder - elastyczne, wykrywa nieznane, ale więcej false positives
+
+Kombinacja obu metod zapewnia:
+  • Wysoką skuteczność wykrywania znanych zagrożeń
+  • Zdolność do wykrycia nieznanych wcześniej anomalii
+  • Optymalne wykorzystanie czasu operatora
+  • Minimalizację ryzyka przeoczenia zagrożenia
+
+System nadaje się do wdrożenia w rzeczywistych punktach kontroli bezpieczeństwa
+jako narzędzie wspomagające operatorów.
